@@ -550,6 +550,8 @@ for m in model.modules():
         m.float()
 if hasattr(config, "coordinate_descent_tuning"):
     config.coordinate_descent_tuning = True  # suggested by @Chillee
+
+print("Compiling model...")
 model = torch.compile(model)
 # here we wrap model into DDP container
 model = DDP(model, device_ids=[ddp_local_rank])
