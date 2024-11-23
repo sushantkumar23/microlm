@@ -1,4 +1,5 @@
 numpy
 tqdm
-torch @ https://download.pytorch.org/whl/nightly/cu124/torch-2.6.0.dev-cp310-cp310-linux_x86_64.whl
+--find-links https://download.pytorch.org/whl/nightly/cu124
+torch>=2.0.0
 huggingface-hub
