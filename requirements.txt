@@ -1,5 +1,5 @@
 numpy
 tqdm
---find-links https://download.pytorch.org/whl/nightly/cu124
-torch>=2.0.0
+torch
 huggingface-hub
+hellaswag
