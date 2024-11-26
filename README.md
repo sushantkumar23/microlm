@@ -2,7 +2,9 @@
 
 This repository contains a PyTorch implementation of the MicroLM model. Improvement over the original nanogpt implementation by Andrej Karpathy are as follows:
 
-1. Rotary embeddings: are used for the attention mechanism
+- [x] Rotary embeddings: Using rotary embeddings instead of learned embeddings for positional encoding
+- [x] Flex Attention: Using Flex Attention instead of Flash Attention
+- [ ] QK normalization: Normalizing the QK matrices instead of using the default implementation
 
 ## Setup
 
