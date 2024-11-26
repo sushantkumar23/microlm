@@ -1,3 +1,6 @@
 numpy
+matplotlib
 tqdm
 huggingface-hub
+tiktoken
+transformers
