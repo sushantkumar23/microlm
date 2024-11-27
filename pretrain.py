@@ -407,6 +407,10 @@ class Hyperparameters:
     train_shards_pattern: str = "data/fineweb10B/fineweb_train_*.bin"
     val_shards_pattern: str = "data/fineweb10B/fineweb_val_*.bin"
 
+    num_iterations: int = 1875  # number of iterations to run
+    warmup_iters: int = 625
+    warmdown_iters: int = 625
+
     val_loss_every: int = 125
 
 
@@ -493,32 +497,29 @@ raw_model = model.module if ddp else model  # always contains the "raw" unwrappe
 
 max_lr = 6e-4
 min_lr = max_lr * 0.1
-warmup_steps = 715
-max_steps = (
-    19073  # 19,073 steps is ~1 epoch, if data is 10B tokens and batch size 0.5M tokens
-)
 
 
+# Trapezoidal learning rate schedule
 def get_lr(it):
+    assert it <= args.num_iterations
     # 1) linear warmup for warmup_iters steps
-    if it < warmup_steps:
-        return max_lr * (it + 1) / warmup_steps
-    # 2) if it > lr_decay_iters, return min learning rate
-    if it > max_steps:
-        return min_lr
-    # 3) in between, use cosine decay down to min learning rate
-    decay_ratio = (it - warmup_steps) / (max_steps - warmup_steps)
-    assert 0 <= decay_ratio <= 1
-    coeff = 0.5 * (
-        1.0 + math.cos(math.pi * decay_ratio)
-    )  # coeff starts at 1 and goes to 0
-    return min_lr + coeff * (max_lr - min_lr)
+    if it < args.warmup_iters:
+        return max_lr * (it + 1) / args.warmup_iters
+    # 2) constant lr for a while
+    elif it < args.num_iterations - args.warmdown_iters:
+        return max_lr
+    # 3) linear warmdown
+    else:
+        # Linear decay from max_lr to min_lr
+        decay_ratio = (args.num_iterations - it) / args.warmdown_iters
+        return min_lr + decay_ratio * (max_lr - min_lr)
 
 
 # optimize!
 optimizer = raw_model.configure_optimizers(
     weight_decay=0.1, learning_rate=6e-4, device_type=device_type
 )
+scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, get_lr)
 
 # create the log directory we will write checkpoints to and log to
 log_dir = "log"
@@ -527,9 +528,9 @@ log_file = os.path.join(log_dir, f"log.txt")
 with open(log_file, "w") as f:  # open for writing to clear the file
     pass
 
-for step in range(max_steps):
+for step in range(args.num_iterations + 1):
     t0 = time.time()
-    last_step = step == max_steps - 1
+    last_step = step == args.num_iterations
 
     # once in a while evaluate our validation loss
     if step % args.val_loss_every == 0 or last_step:
@@ -664,6 +665,7 @@ for step in range(max_steps):
     for param_group in optimizer.param_groups:
         param_group["lr"] = lr
     optimizer.step()
+    scheduler.step()
     if device_type == "cuda":
         torch.cuda.synchronize()  # wait for the GPU to finish work
     t1 = time.time()
