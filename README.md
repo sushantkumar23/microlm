@@ -16,7 +16,7 @@ cd microlm
 pip install -r requirements.txt
 pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu124 --upgrade
 python cached_fineweb10B.py 10
-torchrun --standalone --nproc_per_node=2 pretrain.py
+torchrun --standalone --nproc_per_node=1 pretrain.py
 ```
 
 ## Loss Visualization
