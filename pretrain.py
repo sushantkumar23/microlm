@@ -462,7 +462,7 @@ enc = tiktoken.get_encoding("gpt2")
 total_batch_size = 524288  # 2**19, ~0.5M, in number of tokens
 
 # Keep batch size small for MPS: Macbook
-B = 8 if device == "mps" else 64  # micro batch size
+B = 8 if device == "mps" else 16  # micro batch size
 
 T = 1024  # sequence length
 assert (
