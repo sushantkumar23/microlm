@@ -8,6 +8,7 @@ from torch.nn import functional as F
 from hellaswag import render_example, iterate_examples
 
 from gpt2 import GPT, GPTConfig
+from llama import Llama3Config, Llama3
 
 
 # -----------------------------------------------------------------------------
@@ -214,7 +215,8 @@ val_loader = DistributedDataLoader(
 torch.set_float32_matmul_precision("high")
 
 # create model
-model = GPT(GPTConfig(vocab_size=50304))
+# model = GPT(GPTConfig(vocab_size=50304))
+model = Llama3(Llama3Config(vocab_size=50304))
 # model = GPT.from_pretrained("gpt2") # or init from OpenAI GPT-2
 model.to(device)
 use_compile = (
