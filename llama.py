@@ -1,8 +1,17 @@
 import inspect
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+
+def default_rope_freq():
+    return {
+        "factor": 32.0,
+        "low_freq_factor": 1.0,
+        "high_freq_factor": 4.0,
+        "original_context_length": 8192,
+    }
 
 
 @dataclass
@@ -16,12 +25,7 @@ class Llama3Config:
     n_kv_groups: int = 8
     rope_base: float = 500_000.0
     dtype: torch.dtype = torch.bfloat16
-    rope_freq: dict = {
-        "factor": 32.0,
-        "low_freq_factor": 1.0,
-        "high_freq_factor": 4.0,
-        "original_context_length": 8192,
-    }
+    rope_freq: dict = field(default_factory=default_rope_freq)
 
 
 class FeedForward(nn.Module):
