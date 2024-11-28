@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass
 import torch
 from torch.nn import functional as F
+import torch._inductor.config as config
 import torch._dynamo as dynamo
 
 from gpt2 import GPT, GPTConfig
@@ -194,7 +195,7 @@ enc = tiktoken.get_encoding("gpt2")
 total_batch_size = 524288  # 2**19, ~0.5M, in number of tokens
 
 # Keep batch size small for MPS: Macbook
-B = 8 if device == "mps" else 16  # micro batch size
+B = 8 if device == "mps" else 32  # micro batch size
 T = args.sequence_length
 assert (
     total_batch_size % (B * T * ddp_world_size) == 0
@@ -230,6 +231,8 @@ model = GPT(GPTConfig(vocab_size=50304, n_layer=12, n_head=12, n_embd=768))  # 1
 #     )
 # )
 model = model.to(device).bfloat16()
+if hasattr(config, "coordinate_descent_tuning"):
+    config.coordinate_descent_tuning = True # suggested by @Chillee
 use_compile = True
 if use_compile:
     # Configure compilation for better performance
