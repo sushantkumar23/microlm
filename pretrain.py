@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 import torch
 from torch.nn import functional as F
-from hellaswag import render_example, iterate_examples
+import torch._dynamo as dynamo
 
 from gpt2 import GPT, GPTConfig
 from llama import Llama3Config, Llama3
@@ -215,15 +215,30 @@ val_loader = DistributedDataLoader(
 torch.set_float32_matmul_precision("high")
 
 # create model
-# model = GPT(GPTConfig(vocab_size=50304))
-model = Llama3(Llama3Config(vocab_size=50304))
 # model = GPT.from_pretrained("gpt2") # or init from OpenAI GPT-2
-model.to(device)
-use_compile = (
-    False  # torch.compile interferes with HellaSwag eval and Generation. TODO fix
-)
+model = GPT(GPTConfig(vocab_size=50304, n_layer=12, n_head=12, n_embd=768))  # 124M params
+# model = GPT(GPTConfig(vocab_size=50304, n_layer=24, n_head=16, n_embd=1024))  # 350M params
+# model = Llama3(
+#     Llama3Config(
+#         vocab_size=50304,
+#         context_length=1024,
+#         n_layers=12,
+#         emb_dim=1024,
+#         n_heads=16,
+#         n_kv_groups=4,
+#         hidden_dim=4096,
+#     )
+# )
+model = model.to(device).bfloat16()
+use_compile = True
 if use_compile:
+    # Configure compilation for better performance
+    dynamo.config.suppress_errors = True
+    dynamo.config.cache_size_limit = 64
     model = torch.compile(model)
+else:
+    from hellaswag import render_example, iterate_examples
+
 if ddp:
     model = DDP(model, device_ids=[ddp_local_rank])
 raw_model = model.module if ddp else model  # always contains the "raw" unwrapped model
