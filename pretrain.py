@@ -408,6 +408,8 @@ class Hyperparameters:
     train_shards_pattern: str = "data/fineweb10B/fineweb_train_*.bin"
     val_shards_pattern: str = "data/fineweb10B/fineweb_val_*.bin"
 
+    sequence_length: int = 1024
+
     num_iterations: int = 1875  # number of iterations to run
     warmup_iters: int = 625
     warmdown_iters: int = 625
@@ -463,8 +465,7 @@ total_batch_size = 524288  # 2**19, ~0.5M, in number of tokens
 
 # Keep batch size small for MPS: Macbook
 B = 8 if device == "mps" else 16  # micro batch size
-
-T = 1024  # sequence length
+T = args.sequence_length
 assert (
     total_batch_size % (B * T * ddp_world_size) == 0
 ), "make sure total_batch_size is divisible by B * T * ddp_world_size"
