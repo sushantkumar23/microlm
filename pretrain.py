@@ -246,7 +246,7 @@ if ddp:
     model = DDP(model, device_ids=[ddp_local_rank])
 raw_model = model.module if ddp else model  # always contains the "raw" unwrapped model
 
-max_lr = 6e-4
+max_lr = 0.006
 min_lr = max_lr * 0.1
 
 
